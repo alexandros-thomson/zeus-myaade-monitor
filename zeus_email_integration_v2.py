@@ -254,9 +254,9 @@ Legal Heir: Stamatina Kyprianos (Widow, Sole Beneficiary)
 U.S.-Greece Tax Treaty Violations: Documented across 5 protocols
 
 Estate Assets:
-  - Property: 11 Daskalaki, Spetses (Parcel 0507025)
-  - Property: 84 Sachtouri, Spetses (Parcel 0402002)
-  - Bank Accounts: Alpha Bank, HSBC, NBG
+  - Property: Spetses Island (KAEK 05134000000508766)
+  - Property: Vosporou 14, Keratsini 18755 (KAEK 050681726008)
+  - Bank Accounts: NBG, Comerica Bank
   - Tax Refund: EUR 5,000+ (Protocol 051340)
 
 {sep}
