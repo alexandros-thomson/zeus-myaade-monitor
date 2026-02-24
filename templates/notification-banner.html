@@ -1,0 +1,31 @@
+<!--
+  Zeus MYAADE Monitor - AADE Status Change Notification Banner
+  Template variables: {{PROTOCOL_NUMBER}}, {{OLD_STATUS}}, {{NEW_STATUS}}, {{TIMESTAMP}}, {{SEVERITY}}
+-->
+<div style="max-width:600px; margin:0 auto; font-family:Arial,sans-serif;">
+  <div style="background:linear-gradient(135deg, #2E0854 0%, #1a0330 100%); border:2px solid #DAA520; border-radius:8px; overflow:hidden;">
+    <div style="background:#DAA520; padding:8px 16px; text-align:center;">
+      <strong style="color:#2E0854; font-size:14px; letter-spacing:2px;">ZEUS MYAADE MONITOR — STATUS CHANGE DETECTED</strong>
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td width="80" style="padding:16px; vertical-align:top; text-align:center;">
+          <img src="https://raw.githubusercontent.com/alexandros-thomson/zeus-myaade-monitor/main/assets/zeus-myaade-crest.png" width="60" height="60" alt="Zeus Crest" style="border-radius:50%; border:2px solid #DAA520;">
+        </td>
+        <td style="padding:16px; color:#FFFFFF;">
+          <div style="font-size:13px; color:#DAA520; margin-bottom:4px;">PROTOCOL ALERT — {{SEVERITY}}</div>
+          <div style="font-size:16px; font-weight:bold; margin-bottom:8px;">{{PROTOCOL_NUMBER}} — Status Changed</div>
+          <table cellpadding="4" cellspacing="0" border="0" style="font-size:12px; color:#CCC;">
+            <tr><td style="color:#DAA520; padding-right:8px;">Previous:</td><td>{{OLD_STATUS}}</td></tr>
+            <tr><td style="color:#DAA520; padding-right:8px;">Current:</td><td style="color:#FF6B6B; font-weight:bold;">{{NEW_STATUS}}</td></tr>
+            <tr><td style="color:#DAA520; padding-right:8px;">Detected:</td><td>{{TIMESTAMP}}</td></tr>
+            <tr><td style="color:#DAA520; padding-right:8px;">Case:</td><td>Kyprianos — AADE Protocol Oversight</td></tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <div style="background:rgba(218,165,32,0.15); padding:8px 16px; text-align:center; border-top:1px solid #DAA520; font-size:11px; color:#DAA520;">
+      Automated monitoring by Zeus MYAADE Monitor v1.0 · Kypria Technologies
+    </div>
+  </div>
+</div>
