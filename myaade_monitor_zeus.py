@@ -47,6 +47,12 @@ except ImportError:
     sys.exit(1)
 
 try:
+    from webdriver_manager.chrome import ChromeDriverManager
+except ImportError:
+    print("FATAL: webdriver-manager not installed. Run: pip install webdriver-manager")
+    sys.exit(1)
+
+try:
     import requests
 except ImportError:
     requests = None
@@ -95,7 +101,6 @@ class Config:
     # Browser config
     HEADLESS: bool = os.getenv("HEADLESS_MODE", "true").lower() == "true"
     CHROME_BINARY: str = os.getenv("CHROME_BINARY", "/usr/bin/chromium")
-    CHROMEDRIVER_PATH: str = os.getenv("CHROMEDRIVER_PATH", "/usr/bin/chromedriver")
 
     # Protocol tracking
     TRACKED_PROTOCOLS: List[str] = [
@@ -409,7 +414,8 @@ class ZeusMonitor:
         if config.CHROME_BINARY:
             options.binary_location = config.CHROME_BINARY
 
-        service = Service(executable_path=config.CHROMEDRIVER_PATH)
+        # Use webdriver-manager to automatically download and manage ChromeDriver
+        service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
         driver.set_page_load_timeout(60)
         driver.implicitly_wait(10)
