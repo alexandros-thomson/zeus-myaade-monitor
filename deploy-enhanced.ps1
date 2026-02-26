@@ -19,13 +19,13 @@
 # Prerequisites:
 #   - Docker Desktop 4.0+ and Docker Compose v2
 #   - .env file configured with MyAADE credentials
-#   - PowerShell 7.0+ recommended
+#   - PowerShell 5.1+ (7.0+ recommended)
 #   - (Optional) Notion API token for status updates
 #
 # Author: Kostas Kyprianos / Kypria Technologies
 # Enhanced: AI-Powered Deployment System
 # Case: EPPO PP.00179/2026/EN | FBI IC3 | IRS CI Art. 26
-# Version: 2.0.0
+# Version: 2.0.1
 # Date: February 25, 2026
 #
 # =============================================================================
@@ -58,7 +58,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 # =============================================================================
 
 $script:DeploymentConfig = @{
-    Version = "2.0.0"
+    Version = "2.0.1"
     Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     Environment = $Environment
     RepoName = "zeus-myaade-monitor"
@@ -95,21 +95,23 @@ function Write-EnhancedLog {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $logMessage = "[$timestamp] [$Level] $Message"
     
-    # Console output with color
+    # Console output with color (ASCII-safe symbols for Windows PS 5.1 compatibility)
     $emoji = switch ($Level) {
-        "SUCCESS" { "✅"; $Color = "Green" }
-        "INFO" { "ℹ️"; $Color = "Cyan" }
-        "WARN" { "⚠️"; $Color = "Yellow" }
-        "ERROR" { "❌"; $Color = "Red" }
-        "METRIC" { "📊"; $Color = "Magenta" }
-        "SECURITY" { "🔒"; $Color = "DarkCyan" }
-        default { "•"; $Color = "White" }
+        "SUCCESS"  { "[OK]"; $Color = "Green" }
+        "INFO"     { "[i]"; $Color = "Cyan" }
+        "WARN"     { "[!]"; $Color = "Yellow" }
+        "ERROR"    { "[X]"; $Color = "Red" }
+        "METRIC"   { "[#]"; $Color = "Magenta" }
+        "SECURITY" { "[S]"; $Color = "DarkCyan" }
+        default    { "[*]"; $Color = "White" }
     }
     
     Write-Host "$emoji  $Message" -ForegroundColor $Color
     
     # Log to file
-    $logFile = Join-Path $script:DeploymentConfig.LogDir "deployment-$(Get-Date -Format 'yyyy-MM-dd').log"
+    $logDir = $script:DeploymentConfig.LogDir
+    $logDate = Get-Date -Format 'yyyy-MM-dd'
+    $logFile = Join-Path $logDir "deployment-$logDate.log"
     if (-not (Test-Path (Split-Path $logFile))) {
         New-Item -ItemType Directory -Force -Path (Split-Path $logFile) | Out-Null
     }
@@ -127,7 +129,7 @@ function Write-Header {
     param($Message)
     $line = "=" * 80
     Write-Host "`n$line" -ForegroundColor Magenta
-    Write-Host "⚡ $Message" -ForegroundColor Magenta
+    Write-Host ">>> $Message" -ForegroundColor Magenta
     Write-Host "$line`n" -ForegroundColor Magenta
 }
 
@@ -228,7 +230,8 @@ function Backup-CurrentDeployment {
     
     Write-Header "CREATING DEPLOYMENT BACKUP"
     
-    $backupPath = Join-Path $script:DeploymentConfig.BackupDir "backup-$(Get-Date -Format 'yyyy-MM-dd-HHmmss')"
+    $backupDate = Get-Date -Format 'yyyy-MM-dd-HHmmss'
+    $backupPath = Join-Path $script:DeploymentConfig.BackupDir "backup-$backupDate"
     
     try {
         if (-not (Test-Path $script:DeploymentConfig.BackupDir)) {
@@ -362,7 +365,7 @@ function Initialize-Configuration {
         }
         
         # Interactive configuration
-        Write-Warn "⚠️  CONFIGURATION REQUIRED ⚠️"
+        Write-Warn "** CONFIGURATION REQUIRED **"
         Write-Host "`nYou must configure the following in .env:" -ForegroundColor Yellow
         Write-Host "  1. MYAADE_USERNAME (TaxisNet username)" -ForegroundColor Yellow
         Write-Host "  2. MYAADE_PASSWORD (TaxisNet password)" -ForegroundColor Yellow
@@ -396,8 +399,8 @@ function Initialize-Configuration {
     
     if ($validationErrors.Count -gt 0) {
         Write-Err "Configuration validation failed:"
-        foreach ($error in $validationErrors) {
-            Write-Host "  • $error" -ForegroundColor Red
+        foreach ($err in $validationErrors) {
+            Write-Host "  - $err" -ForegroundColor Red
         }
         Pop-Location
         return $false
@@ -449,7 +452,8 @@ function Build-DockerImage {
         Write-Info "Building Zeus MyAADE Monitor image..."
         
         if ($DryRun) {
-            Write-Warn "DRY RUN: Would execute 'docker compose build $($buildArgs -join ' ')'"
+            $argString = $buildArgs -join ' '
+            Write-Warn "DRY RUN: Would execute 'docker compose build $argString'"
             Pop-Location
             return $true
         }
@@ -642,12 +646,12 @@ function Show-DeploymentSummary {
     Write-Host "  Backups:      $(Join-Path (Get-Location) $script:DeploymentConfig.BackupDir)" -ForegroundColor Yellow
     
     Write-Host ""
-    Write-Success "✅ Automated monitoring active - checking MyAADE every 5 minutes"
-    Write-Success "✅ Alerts configured for Slack/Discord on status changes"
-    Write-Success "✅ Evidence automatically collected and timestamped"
+    Write-Success "[OK] Automated monitoring active - checking MyAADE every 5 minutes"
+    Write-Success "[OK] Alerts configured for Slack/Discord on status changes"
+    Write-Success "[OK] Evidence automatically collected and timestamped"
     
     Write-Host ""
-    Write-Header "⚖️ ΦΑΥΛΟΣ ΚΥΚΛΟΣ ENDED. JUSTICE AUTOMATED. ⚖️"
+    Write-Header "JUSTICE AUTOMATED. PHAULOS KYKLOS ENDED."
 }
 
 # =============================================================================
@@ -661,7 +665,7 @@ function Start-Deployment {
         Write-Info "Started: $($script:DeploymentConfig.Timestamp)"
         
         if ($DryRun) {
-            Write-Warn "🧪 DRY RUN MODE - No actual changes will be made"
+            Write-Warn "** DRY RUN MODE - No actual changes will be made **"
         }
         
         # Step 1: Prerequisites
@@ -703,16 +707,17 @@ function Start-Deployment {
         # Step 9: Summary
         Show-DeploymentSummary
         
-        Write-Success "✅ DEPLOYMENT COMPLETED SUCCESSFULLY ✅"
+        Write-Success "=== DEPLOYMENT COMPLETED SUCCESSFULLY ==="
         exit 0
         
     } catch {
-        Write-Err "❌ DEPLOYMENT FAILED ❌"
+        Write-Err "=== DEPLOYMENT FAILED ==="
         Write-Err "Error: $($_.Exception.Message)"
         Write-Err "Stack Trace: $($_.ScriptStackTrace)"
         
         Write-Host ""
-        Write-Warn "Check logs at: $(Join-Path $script:DeploymentConfig.LogDir 'deployment-*.log')"
+        $logPattern = Join-Path $script:DeploymentConfig.LogDir 'deployment-*.log'
+        Write-Warn "Check logs at: $logPattern"
         
         exit 1
     }
