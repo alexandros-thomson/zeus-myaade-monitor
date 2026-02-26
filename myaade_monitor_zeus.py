@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
 myaade_monitor_zeus.py -- Zeus MyAADE Protocol Monitor
 
@@ -119,14 +120,7 @@ class Config:
 
     # MyAADE URLs -- GSIS OAuth login portal
     MYAADE_BASE: str = "https://www1.aade.gr/taxisnet"
-    MYAADE_LOGIN: str = (
-        "https://login.gsis.gr/mylogin/login.jsp"
-        "?contextType=external"
-        "&challenge_url=https%3A%2F%2Flogin.gsis.gr%2Fmylogin%2Flogin.jsp"
-        "&ssoCookie=disablehttponly"
-        "&locale=en_US"
-        "&resource_url=https%253A%252F%252Fwww1.aade.gr%252Ftaxisnet%252Fmytaxisnet%252Fprotected%252Fapplications.htm"
-    )
+    MYAADE_LOGIN_ENTRY: str = "https://login.gsis.gr/mylogin/login.jsp"
     MYAADE_PROTOCOLS: str = "https://www1.aade.gr/taxisnet/protocols"
 
 config = Config()
@@ -136,31 +130,31 @@ config = Config()
 # ---------------------------------------------------------------------------
 DEFLECTION_PATTERNS = {
     "forwarded": {
-        "keywords_el": ["\u03b4\u03b9\u03b1\u03b2\u03b9\u03b2\u03ac\u03c3\u03c4\u03b7\u03ba\u03b5", "\u03c0\u03c1\u03bf\u03c9\u03b8\u03ae\u03b8\u03b7\u03ba\u03b5", "\u03b1\u03c1\u03bc\u03cc\u03b4\u03b9\u03b1 \u03c5\u03c0\u03b7\u03c1\u03b5\u03c3\u03af\u03b1"],
+        "keywords_el": ["διαβιβάστηκε", "προωθήθηκε", "αρμόδια υπηρεσία"],
         "keywords_en": ["forwarded", "referred to", "competent authority"],
         "severity": "HIGH",
         "description": "Protocol forwarded to another agency (deflection)",
     },
     "under_review": {
-        "keywords_el": ["\u03b5\u03be\u03b5\u03c4\u03ac\u03b6\u03b5\u03c4\u03b1\u03b9", "\u03c5\u03c0\u03cc \u03b5\u03c0\u03b5\u03be\u03b5\u03c1\u03b3\u03b1\u03c3\u03af\u03b1", "\u03c3\u03b5 \u03b5\u03be\u03ad\u03bb\u03b9\u03be\u03b7"],
+        "keywords_el": ["εξετάζεται", "υπό επεξεργασία", "σε εξέλιξη"],
         "keywords_en": ["under review", "processing", "in progress"],
         "severity": "WATCH",
         "description": "Generic 'under review' status (possible stalling)",
     },
     "no_jurisdiction": {
-        "keywords_el": ["\u03b1\u03bd\u03b1\u03c1\u03bc\u03cc\u03b4\u03b9\u03bf", "\u03b4\u03b5\u03bd \u03c5\u03c0\u03ac\u03b3\u03b5\u03c4\u03b1\u03b9", "\u03b4\u03b5\u03bd \u03b5\u03bc\u03c0\u03af\u03c0\u03c4\u03b5\u03b9"],
+        "keywords_el": ["αναρμόδιο", "δεν υπάγεται", "δεν εμπίπτει"],
         "keywords_en": ["no jurisdiction", "not competent", "outside scope"],
         "severity": "CRITICAL",
         "description": "Agency claims no jurisdiction (hard deflection)",
     },
     "responded": {
-        "keywords_el": ["\u03b1\u03c0\u03b1\u03bd\u03c4\u03ae\u03b8\u03b7\u03ba\u03b5", "\u03bf\u03bb\u03bf\u03ba\u03bb\u03b7\u03c1\u03ce\u03b8\u03b7\u03ba\u03b5", "\u03b4\u03b9\u03b5\u03ba\u03c0\u03b5\u03c1\u03b1\u03b9\u03ce\u03b8\u03b7\u03ba\u03b5"],
+        "keywords_el": ["απαντήθηκε", "ολοκληρώθηκε", "διεκπεραιώθηκε"],
         "keywords_en": ["answered", "completed", "resolved"],
         "severity": "CRITICAL",
         "description": "Marked as 'answered' -- verify actual resolution",
     },
     "archived": {
-        "keywords_el": ["\u03b1\u03c1\u03c7\u03b5\u03b9\u03bf\u03b8\u03b5\u03c4\u03ae\u03b8\u03b7\u03ba\u03b5", "\u03c4\u03ad\u03b8\u03b7\u03ba\u03b5 \u03c3\u03c4\u03bf \u03b1\u03c1\u03c7\u03b5\u03af\u03bf"],
+        "keywords_el": ["αρχειοθετήθηκε", "τέθηκε στο αρχείο"],
         "keywords_en": ["archived", "filed away"],
         "severity": "CRITICAL",
         "description": "Protocol archived without resolution",
@@ -423,20 +417,14 @@ class ZeusMonitor:
         return driver
 
     def _find_login_button(self, wait: WebDriverWait):
-        """Find the GSIS login submit button using multiple fallback selectors.
-
-        The GSIS portal (login.gsis.gr) uses:
-          <button type='submit' name='btn_login' class='... btn ...'>
-        This method tries several selectors in order so the monitor
-        survives future HTML changes on the GSIS side.
-        """
+        """Find the GSIS login submit button using multiple fallback selectors."""
         selectors = [
             (By.NAME, "btn_login"),
             (By.CSS_SELECTOR, "button[type='submit']"),
             (By.CSS_SELECTOR, "button.btn"),
             (By.ID, "loginBtn"),
             (By.CSS_SELECTOR, "input[type='submit']"),
-            (By.XPATH, "//button[contains(text(),'\u03a3\u03cd\u03bd\u03b4\u03b5\u03c3\u03b7')]"),
+            (By.XPATH, "//button[contains(text(),'Σύνδεση')]"),
             (By.XPATH, "//button[contains(text(),'Login')]"),
         ]
         for by, selector in selectors:
@@ -451,49 +439,90 @@ class ZeusMonitor:
             + ", ".join(f"{by}={sel}" for by, sel in selectors)
         )
 
+    def _extract_bmctx(self) -> Optional[str]:
+        """Extract the browser context (bmctx) from hidden form fields.
+        
+        GSIS generates a unique bmctx for each login session. We need to
+        extract it from the login form before submitting credentials.
+        """
+        try:
+            # Try to find the bmctx in hidden input fields
+            hidden_inputs = self.driver.find_elements(
+                By.CSS_SELECTOR, "input[type='hidden']"
+            )
+            for input_elem in hidden_inputs:
+                name = input_elem.get_attribute("name")
+                value = input_elem.get_attribute("value")
+                if name == "bmctx" or "bmctx" in str(value):
+                    logger.info("Extracted bmctx: %s", value[:20] + "...")
+                    return value
+            
+            # Alternative: look in page source
+            page_source = self.driver.page_source
+            if "bmctx=" in page_source:
+                start = page_source.find("bmctx=") + 6
+                end = page_source.find("&", start)
+                if end == -1:
+                    end = page_source.find('"', start)
+                bmctx = page_source[start:end]
+                logger.info("Extracted bmctx from page source: %s", bmctx[:20] + "...")
+                return bmctx
+            
+            logger.warning("Could not extract bmctx from form")
+            return None
+        except Exception as e:
+            logger.error("Error extracting bmctx: %s", e)
+            return None
+
     def _login_taxisnet(self) -> bool:
         """Authenticate via TaxisNet OAuth (GSIS login).
-
-        GSIS login form (login.gsis.gr):
-          - Username field: <input id='username' name='username'>
-          - Password field: <input id='password' name='password'>
-          - Submit button:  <button type='submit' name='btn_login'>
-          - Form action:    /oam/server/auth_cred_submit
+        
+        GSIS login flow:
+        1. Visit the login entry page
+        2. Extract the dynamic bmctx (browser context) from the form
+        3. Fill in username and password
+        4. Submit the form
+        5. Wait for redirect to taxisnet
         """
         if not config.MYAADE_USERNAME or not config.MYAADE_PASSWORD:
             logger.error("Missing MYAADE credentials in .env")
             return False
 
         try:
-            logger.info("Navigating to GSIS login page...")
-            self.driver.get(config.MYAADE_LOGIN)
+            logger.info("Navigating to GSIS login entry page...")
+            self.driver.get(config.MYAADE_LOGIN_ENTRY)
             wait = WebDriverWait(self.driver, 30)
 
-            # Wait for and fill username
-            username_field = wait.until(
+            # Wait for the login form to load
+            wait.until(
                 EC.presence_of_element_located((By.ID, "username"))
             )
+            logger.info("Login form loaded, extracting bmctx...")
+
+            # Extract the dynamic bmctx
+            bmctx = self._extract_bmctx()
+            if not bmctx:
+                logger.warning("Could not extract bmctx, proceeding anyway...")
+
+            # Fill username
+            username_field = self.driver.find_element(By.ID, "username")
             username_field.clear()
             username_field.send_keys(config.MYAADE_USERNAME)
-            logger.info("Username entered: %s", config.MYAADE_USERNAME[:3] + "***")
+            logger.info("Username entered")
 
             # Fill password
-            password_field = wait.until(
-                EC.presence_of_element_located((By.ID, "password"))
-            )
+            password_field = self.driver.find_element(By.ID, "password")
             password_field.clear()
             password_field.send_keys(config.MYAADE_PASSWORD)
-            logger.info("Password entered (length: %d)", len(config.MYAADE_PASSWORD))
+            logger.info("Password entered")
 
-            # Find and click submit button (multi-selector fallback)
+            # Find and click submit button
             submit_btn = self._find_login_button(wait)
             logger.info("Clicking login button...")
             submit_btn.click()
-            logger.info("Login form submitted, waiting for redirect (up to 45 seconds)...")
+            logger.info("Login form submitted, waiting for redirect...")
 
-            # EXTENDED TIMEOUT: GSIS can be slow. Wait up to 45 seconds for redirect.
-            # Success = any URL that contains taxisnet, myaade, aade.gr, or applications.htm
-            # Failure = stays at auth_cred_submit (which means backend rejected credentials)
+            # Wait for successful redirect (45 second timeout)
             try:
                 wait.until(
                     lambda d: any(kw in d.current_url for kw in [
@@ -504,40 +533,37 @@ class ZeusMonitor:
                 logger.info("TaxisNet login successful (URL: %s)", self.driver.current_url)
                 return True
             except TimeoutException:
-                # Still stuck at auth_cred_submit -- backend rejected the credentials
+                # Login failed - still at auth_cred_submit or error page
                 current_url = self.driver.current_url
                 page_title = self.driver.title
                 page_text = self.driver.find_element(By.TAG_NAME, "body").text[:500]
                 
-                logger.error("Login timed out after 45 seconds (still at auth_cred_submit)")
+                logger.error("Login failed after 45 seconds")
                 logger.error("Current URL: %s", current_url)
                 logger.error("Page title: %s", page_title)
                 logger.error("Page text (first 500 chars): %s", page_text)
                 
-                # Detect specific error patterns
+                # Diagnose the error
                 html = self.driver.page_source.lower()
-                if "locked" in html or "\u03ba\u03bb\u03b5\u03b9\u03c3\u03c4" in page_title.lower():
+                if "locked" in html or "κλειστ" in page_title.lower():
                     logger.error("[DIAGNOSIS] Account appears LOCKED")
-                elif "invalid" in html or "\u03ac\u03ba\u03c5\u03c1" in page_title.lower():
+                elif "invalid" in html or "άκυρ" in page_title.lower():
                     logger.error("[DIAGNOSIS] Invalid credentials detected")
-                elif "expired" in html or "\u03bb\u03ae\u03c8\u03b7" in page_text.lower():
+                elif "expired" in html or "λήξη" in page_text.lower():
                     logger.error("[DIAGNOSIS] Password may be EXPIRED")
                 else:
                     logger.error("[DIAGNOSIS] Unknown error at GSIS backend")
                 
-                # Save the error HTML for manual review
-                error_file = capture_html_error(self.driver, "login_timeout", config.SCREENSHOT_DIR)
-                logger.error("Full error HTML saved: %s", error_file)
-                
-                # Take screenshot as well
-                capture_screenshot(self.driver, "login_timeout", config.SCREENSHOT_DIR)
+                # Capture error evidence
+                error_file = capture_html_error(self.driver, "login_failed", config.SCREENSHOT_DIR)
+                logger.error("Error HTML saved: %s", error_file)
+                capture_screenshot(self.driver, "login_failed", config.SCREENSHOT_DIR)
                 
                 return False
 
         except TimeoutException:
             logger.error("Login form not found (page load timeout)")
             logger.error("Current URL: %s", self.driver.current_url)
-            logger.error("Page title: %s", self.driver.title)
             capture_screenshot(self.driver, "login_form_missing", config.SCREENSHOT_DIR)
             capture_html_error(self.driver, "login_form_timeout", config.SCREENSHOT_DIR)
             return False
@@ -549,7 +575,7 @@ class ZeusMonitor:
         except Exception as e:
             logger.error("Login failed: %s", e)
             logger.error(traceback.format_exc())
-            capture_screenshot(self.driver, "login_failure", config.SCREENSHOT_DIR)
+            capture_screenshot(self.driver, "login_exception", config.SCREENSHOT_DIR)
             capture_html_error(self.driver, "login_exception", config.SCREENSHOT_DIR)
             return False
 
@@ -773,14 +799,14 @@ class ZeusMonitor:
             logger.error("Login failed after %d attempts. Exiting.", config.MAX_RETRIES)
             logger.error("")
             logger.error("TROUBLESHOOTING:")
-            logger.error("1. Check your MYAADE_USERNAME and MYAADE_PASSWORD in .env")
-            logger.error("2. Verify password is not expired (reset on GSIS portal if needed)")
-            logger.error("3. Check if account is locked (too many failed attempts)")
+            logger.error("1. Verify MYAADE_USERNAME and MYAADE_PASSWORD in .env")
+            logger.error("2. Check if account is locked (too many failed attempts)")
+            logger.error("3. Check if password is expired (reset on GSIS if needed)")
             logger.error("4. Review error HTML files in %s", config.SCREENSHOT_DIR)
             logger.error("")
             send_alerts(
                 f"Zeus Monitor FAILED to login after {config.MAX_RETRIES} attempts. "
-                f"Check credentials and account status.",
+                f"Check credentials, account status, and password expiration.",
                 "CRITICAL",
             )
             self.shutdown()
