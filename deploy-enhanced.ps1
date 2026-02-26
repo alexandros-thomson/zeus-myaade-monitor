@@ -25,7 +25,7 @@
 # Author: Kostas Kyprianos / Kypria Technologies
 # Enhanced: AI-Powered Deployment System
 # Case: EPPO PP.00179/2026/EN | FBI IC3 | IRS CI Art. 26
-# Version: 2.0.2
+# Version: 2.0.3 (FIXED: Health check path bug)
 # Date: February 25, 2026
 #
 # =============================================================================
@@ -58,7 +58,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 # =============================================================================
 
 $script:DeploymentConfig = @{
-    Version = "2.0.2"
+    Version = "2.0.3"
     Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     Environment = $Environment
     RepoName = "zeus-myaade-monitor"
@@ -70,6 +70,7 @@ $script:DeploymentConfig = @{
     MaxBackups = 5
     HealthCheckRetries = 3
     HealthCheckDelay = 10
+    ContainerName = "zeus-myaade-monitor"
 }
 
 # Metrics: use $null for durations so .TotalSeconds is only called on
@@ -542,34 +543,45 @@ function Deploy-Service {
 }
 
 # =============================================================================
-# HEALTH CHECKS & MONITORING
+# HEALTH CHECKS & MONITORING (FIXED v2.0.3)
 # =============================================================================
 
 function Test-ServiceHealth {
     Write-Header "HEALTH CHECK"
     
-    Push-Location $script:DeploymentConfig.RepoName
+    # Use the parent directory context (where we called from)
+    $repoName = $script:DeploymentConfig.RepoName
+    $containerName = $script:DeploymentConfig.ContainerName
     
     for ($i = 1; $i -le $script:DeploymentConfig.HealthCheckRetries; $i++) {
         Write-Info "Health check attempt $i of $($script:DeploymentConfig.HealthCheckRetries)..."
         
-        $containerStatus = docker compose ps --format json | ConvertFrom-Json
-        
-        if ($containerStatus.State -eq "running") {
-            Write-Success "Container is running"
+        try {
+            # Check if container is running using docker ps (simple, reliable)
+            $containerCheck = docker ps --filter "name=$containerName" --format "{{.Names}}"
             
-            # Check logs for errors
-            $recentLogs = docker compose logs --tail=50 myaade-monitor
-            $errorCount = ($recentLogs | Select-String -Pattern "ERROR|CRITICAL" -AllMatches).Matches.Count
-            
-            if ($errorCount -gt 0) {
-                Write-Warn "Found $errorCount error(s) in recent logs"
-            } else {
-                Write-Success "No errors detected in logs"
+            if ($containerCheck -and $containerCheck.Length -gt 0) {
+                Write-Success "Container '$containerName' is running"
+                
+                # Check logs for errors (non-fatal)
+                try {
+                    $recentLogs = docker logs --tail 50 $containerName 2>&1
+                    $errorCount = ($recentLogs | Select-String -Pattern "ERROR|CRITICAL" -AllMatches -ErrorAction SilentlyContinue).Matches.Count
+                    
+                    if ($errorCount -gt 0) {
+                        Write-Warn "Found $errorCount error(s) in recent logs"
+                    } else {
+                        Write-Success "No errors detected in logs"
+                    }
+                } catch {
+                    # Logs might not be available yet, that's OK
+                    Write-Info "Logs not yet available"
+                }
+                
+                return $true
             }
-            
-            Pop-Location
-            return $true
+        } catch {
+            Write-Warn "Health check error: $($_.Exception.Message)"
         }
         
         if ($i -lt $script:DeploymentConfig.HealthCheckRetries) {
@@ -579,7 +591,6 @@ function Test-ServiceHealth {
     }
     
     Write-Err "Health check failed after $($script:DeploymentConfig.HealthCheckRetries) attempts"
-    Pop-Location
     return $false
 }
 
