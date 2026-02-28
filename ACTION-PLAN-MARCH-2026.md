@@ -18,7 +18,7 @@
 | Date | Agency | Priority | Action Required |
 |------|--------|----------|-----------------|
 | **03/03/2026** (Tue) | EAD (AEAD) | CRITICAL | 19-day statutory deadline (Prot. 5995) expires. Draft escalation by 01/03 |
-| **06/03/2026** (Fri) | Min. Digital Gov. | HIGH | Overdue resubmission. If silent -> Synigoros + EPPO/OLAF/FBI notification |
+| **06/03/2026** (Fri) | Min. Digital Gov. | PREPARED | Escalation drafted. If silent -> Synigoros + EPPO/OLAF/FBI notification |
 | **~14/03/2026** | Ktimatologio | NORMAL | 10-day response window (Ticket 4384023) closes |
 | **Mar 16** | AADE 365003 | MEDIUM | First inquiry (21 days from amendment) |
 | **Apr 6** | AADE 365003 | HIGH | Statutory deadline (42 days) |
