@@ -69,14 +69,16 @@ jobs:
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=15 --max-line-length=120 --statistics
 
-
   ci:
     runs-on: ubuntu-latest
     needs: [test, lint]
     if: always()
     steps:
       - name: Check results
+        env:
+          TEST_RESULT: ${{ needs.test.result }}
+          LINT_RESULT: ${{ needs.lint.result }}
         run: |
-                    if [[ "${{ needs.test.result }}" != "success" || "${{ needs.lint.result }}" != "success" ]]; then
+          if [[ "$TEST_RESULT" != "success" || "$LINT_RESULT" != "success" ]]; then
             exit 1
-            fi
+          fi
