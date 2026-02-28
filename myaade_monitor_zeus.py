@@ -135,6 +135,11 @@ class Config:
     DEADLINE_MINDIGITAL: date = date(2026, 3, 6)
     MINDIGITAL_PROTOCOLS: List[str] = ["4633", "4505", "4314"]
 
+    # 03/03 EAD Statutory Strike Recipients
+    STRIKE_TO = ["grammateia@aead.gr", "dms@aead.gr"]
+    STRIKE_CC_DOMESTIC = ["ccu@cybercrimeunit.gov.gr", "desyp@aade.gr", "complaints@synigoros.gr"]
+    STRIKE_CC_INTL = ["info@eppo.europa.eu", "luxembourg@eppo.europa.eu", "DetroitFieldOffice@ci.irs.gov", "athens.legat@ic.fbi.gov"]
+
 config = Config()
 
 # ---------------------------------------------------------------------------
@@ -538,6 +543,11 @@ class ZeusMonitor:
                         "to ΔΟΥ Κατοίκων Εξωτερικού to avoid processing legitimate claims regarding AFM 051422558 and AFM 044594747."
                     )
                     
+                    # Prepare the TO/CC list from Config for Slack formatting
+                    to_list = ", ".join(config.STRIKE_TO)
+                    cc_domestic = ", ".join(config.STRIKE_CC_DOMESTIC)
+                    cc_intl = ", ".join(config.STRIKE_CC_INTL)
+                    
                     msg = f"🚨 DEADLINE MISSED: MinDigital Protocol {protocol_num} remains unresolved after 06/03/2026."
                     attachments = [{
                         "color": "#FF0000",
@@ -545,7 +555,10 @@ class ZeusMonitor:
                         "text": msg,
                         "fields": [
                             {"title": "System ID", "value": "ZEUS-MD-20260306-001", "short": True},
-                            {"title": "Violation Excerpt", "value": excerpt, "short": False}
+                            {"title": "Violation Excerpt", "value": excerpt, "short": False},
+                            {"title": "Statutory Strike Recipients (TO)", "value": to_list, "short": False},
+                            {"title": "Statutory Strike CC (Domestic)", "value": cc_domestic, "short": False},
+                            {"title": "Statutory Strike CC (International)", "value": cc_intl, "short": False}
                         ],
                         "footer": "EPPO / SDOE / FBI Escalation Prepared"
                     }]
@@ -586,7 +599,7 @@ class ZeusMonitor:
 
         except Exception as e:
             logger.error("Error checking protocol %s: %s", protocol_num, e)
-            status.status_text = f"ERROR: {str(e)[:200}"
+            status.status_text = f"ERROR: {str(e)[:200]}"
         return status
 
     def run_check_cycle(self) -> Dict[str, Any]:
