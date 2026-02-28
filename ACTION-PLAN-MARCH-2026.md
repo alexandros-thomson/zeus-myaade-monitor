@@ -1,9 +1,51 @@
 # MARCH 2026 ACTION PLAN
 ## Justice for John — Next 7 Days Strategic Timeline
 
-**Current Date:** February 23, 2026, 7:29 PM EST  
-**Status:** Critical evidence secured; multi-agency coordination active  
-**Objective:** Execute follow-ups, submit amendments, consolidate evidence
+**Current Date:** February 28, 2026, 2:00 AM EST (Updated from Feb 23)
+**Status:** ESCALATED - 246 protocols active; 4-front night ops completed 28/02/2026
+**Objective:** Sustain multi-front pressure; monitor critical deadlines 03/03, 06/03, 14/03
+
+---
+
+## UPDATE: 28/02/2026 Night Operations - 4-Front Coordinated Strike
+
+> **Protocol Count: 246** (6 new rows 241-246 added this session)
+> **Session:** 8:12 PM - 1:21 AM EST | 8 emails dispatched | 4 bounces resolved
+> **Full debrief:** [`evidence/2026-02-28-night-ops-debrief.md`](evidence/2026-02-28-night-ops-debrief.md)
+
+### NEW Critical Trigger Calendar (Supersedes Previous Deadlines)
+
+| Date | Agency | Priority | Action Required |
+|------|--------|----------|-----------------|
+| **03/03/2026** (Tue) | EAD (AEAD) | CRITICAL | 19-day statutory deadline (Prot. 5995) expires. Draft escalation by 01/03 |
+| **06/03/2026** (Fri) | Min. Digital Gov. | HIGH | Overdue resubmission. If silent -> Synigoros + EPPO/OLAF/FBI notification |
+| **~14/03/2026** | Ktimatologio | NORMAL | 10-day response window (Ticket 4384023) closes |
+| **Mar 16** | AADE 365003 | MEDIUM | First inquiry (21 days from amendment) |
+| **Apr 6** | AADE 365003 | HIGH | Statutory deadline (42 days) |
+| **Apr 12** | Protocol 214142 | HIGH | Rebuttal deadline (60 days) |
+
+### Fronts Executed 28/02/2026
+
+- [x] **Front 1 - Ktimatologio** (Row 241): KAEK 050681726008 forgery complaint, Ticket 4384023, Art.4 N.2690/1999
+- [x] **Front 2a - EAD/AEAD** (Rows 245-246): Status inquiry A 12460/12529, N.4557/2018, ND0113 incorporation
+- [x] **Front 2b - Cybercrime** (Row 244): Follow-up 568/10267/3, KATHLEG + PK370, preservation order request
+- [x] **Front 3 - MinDigital** (Rows 242-243): Escalation Prot. 4633/4505/4314, IBAN audit demand (resubmitted after 3 bounces)
+
+### Confirmed Agency Contacts (Validated 28/02/2026)
+
+- **EPPO:** info@eppo.europa.eu (auto-reply confirmed)
+- **EAD:** grammateia@aead.gr (delivery confirmed)
+- **Cybercrime:** ccu@cybercrimeunit.gov.gr (delivery confirmed)
+- **AADE DESYP:** desyp@aade.gr (delivery confirmed)
+- **Dead addresses removed:** secr-dsd@gsis.gr, report@eppo.europa.eu, luxembourg@eppo.europa.eu, complaints@aead.gr
+
+### Immediate To-Dos (01-02/03/2026)
+
+- [ ] Draft EAD Prot. 5995 escalation letter (deadline 03/03)
+- [ ] Monitor MinDigital for response before 06/03 deadline
+- [ ] Check email for Ktimatologio Ticket 4384023 acknowledgment
+- [ ] Prepare Synigoros tou Politi complaint package (contingency for 06/03)
+- [ ] Update Master Protocol Tracker CSV with rows 241-246
 
 ---
 
@@ -580,10 +622,11 @@ Save to: `/logs/2026-02-daily.md`
 ## File Metadata
 
 - **Created:** 2026-02-23
-- **Version:** 1.0
+- **Version:** 2.0 (Night Ops Update)
 - **Status:** Active
-- **Next Review:** 2026-03-02
+- **Next Review:** 2026-03-03 (EAD deadline)
 - **Repository:** zeus-myaade-monitor
 - **Related:** All protocols, all evidence
+- **Last Updated:** 2026-02-28 02:00 AM EST (Night Ops session complete)
 
 **This is the roadmap. Follow it.**
