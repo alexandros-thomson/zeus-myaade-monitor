@@ -19,6 +19,8 @@ logs/
 screenshots/
 *.png
 *.jpg
+!evidence/*.png
+!evidence/*.jpg
 
 # Python
 __pycache__/
