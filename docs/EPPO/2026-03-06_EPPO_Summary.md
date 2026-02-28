@@ -131,3 +131,6 @@ Reference the following existing EPPO case numbers when submitting this summary:
 - **Source Debrief:** `evidence/2026-02-28-night-ops-debrief.md`
 - **Related Protocols:** ND0113/26/06549 (Row 241) · 4633/4505/4314 (Rows 242–243) · 568/10267/3 (Row 244) · A 12460/12529 (Rows 245–246)
 - **EPPO Cases:** PP.00179, PP.00267, PP.00281, PP.00310
+
+
+<!-- CI trigger: branch protection verification 2026-02-28 -->
