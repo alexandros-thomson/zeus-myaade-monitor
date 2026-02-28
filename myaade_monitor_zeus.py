@@ -586,7 +586,7 @@ class ZeusMonitor:
 
         except Exception as e:
             logger.error("Error checking protocol %s: %s", protocol_num, e)
-            status.status_text = f"ERROR: {str(e)[:200}"
+            status.status_text = f"ERROR: {str(e)[:200]}"
         return status
 
     def run_check_cycle(self) -> Dict[str, Any]:
