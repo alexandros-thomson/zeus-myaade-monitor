@@ -77,6 +77,6 @@ jobs:
     steps:
       - name: Check results
         run: |
-          if [["${{ needs.test.result }}" != "success" || "${{ needs.lint.result }}" != "success" ]]; then
+                    if [[ "${{ needs.test.result }}" != "success" || "${{ needs.lint.result }}" != "success" ]]; then
             exit 1
           fi
