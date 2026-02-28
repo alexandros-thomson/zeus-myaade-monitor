@@ -106,17 +106,92 @@ The monitor understands Greek bureaucracy patterns:
 
 ### Deflection Detection
 
-Automatically detects three main deflection tactics:
+Automatically detects four main deflection tactics:
 
 1. **Forwarding** - "Not our jurisdiction, try another agency"
 2. **Vague Response** - "Απαντήθηκε" without actually solving anything
 3. **Delay Tactic** - Requesting "supplementary documents" endlessly
+4. **ΔΟΥ A' Peiraia Redirect** - Forwarding Δ210 submissions to ΔΟΥ Κατοίκων Εξωτερικού (illegal jurisdiction dodge)
 
 When deflection is detected, you get:
 - 🚨 High-priority alert
 - 📋 Specific recommendations
 - 📊 Deflection count (escalate if ≥2)
 - 🎯 Suggested next actions
+
+## Δ210 Monitoring
+
+### Overview
+
+The monitor includes dedicated tracking for **Δ210 submissions** — formal requests for the complete ENFIA history of a taxpayer (AFM). This is critical for exposing fraudulent ENFIA billing on third-party properties (e.g., KAEK 050681726008).
+
+### Configuration
+
+Add to `.env`:
+
+```bash
+# Δ210 protocol tracking
+D210_PROTOCOL_ID=your_d210_protocol_number   # Protocol number assigned by AADE
+D210_DB_PATH=/app/data/d210_tracker.db       # Shared SQLite path (dual-repo)
+```
+
+### ΔΟΥ A' Peiraia Deflection Detection
+
+The monitor automatically detects when ΔΟΥ A' Peiraia attempts to redirect Δ210 submissions to **ΔΟΥ Κατοίκων Εξωτερικού** — a known deflection tactic used against overseas taxpayers.
+
+**Trigger keywords (Greek):** `δου κατοίκων εξωτερικού`, `αρμόδια δου εξωτερικού`, `κατοίκων εξωτερικού`
+
+When this pattern is detected:
+- Alert severity is set to **CRITICAL**
+- A dedicated Slack alert fires with the cover letter excerpt embedded
+- The deflection is recorded in `d210_submissions` table with `deflection_type = 'doy_peiraia_redirect'`
+
+### Slack Alerts for Δ210 Status Changes
+
+Δ210 status changes fire a rich Slack message that includes:
+- Protocol number and current status
+- Deflection type (if any)
+- ΔΟΥ response excerpt
+- Embedded **cover letter excerpt** (Δ210 filing summary for EPPO/ΣΔΟΕ/FBI cross-reference)
+
+### Database: Δ210 Submissions Table
+
+The `d210_submissions` table in the **shared SQLite database** enables dual-repo coordination between `zeus-myaade-monitor` and `justice-for-john-automation`:
+
+```sql
+SELECT * FROM d210_submissions ORDER BY updated_at DESC;
+```
+
+| Column | Description |
+|--------|-------------|
+| `submission_id` | Unique Δ210 submission identifier |
+| `protocol_number` | AADE protocol number |
+| `submitting_doy` | ΔΟΥ that received the submission |
+| `status` | Current status (`pending`, `deflected`, `answered`, `escalated`) |
+| `doy_response` | Raw response text from ΔΟΥ |
+| `deflection_type` | Detected deflection pattern (e.g., `doy_peiraia_redirect`) |
+| `cover_letter_excerpt` | Cover letter summary embedded in Slack alerts |
+| `slack_alerted` | Whether a Slack alert was sent |
+
+### Dual-Repo Deployment
+
+To coordinate with `justice-for-john-automation`, point both repos at the **same SQLite file**:
+
+```bash
+# zeus-myaade-monitor .env
+D210_DB_PATH=/shared/data/d210_tracker.db
+
+# justice-for-john-automation .env
+D210_DB_PATH=/shared/data/d210_tracker.db
+```
+
+With Docker, mount a shared volume:
+
+```yaml
+# docker-compose.yml (both repos)
+volumes:
+  - /host/shared/data:/app/data
+```
 
 ## Commands
 

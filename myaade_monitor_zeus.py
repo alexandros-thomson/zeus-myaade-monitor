@@ -26,6 +26,7 @@ import sqlite3
 import sys
 import time
 import traceback
+import unicodedata
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
@@ -123,6 +124,10 @@ class Config:
     AFM_STAMATINA: str = "044594747"
     AFM_JOHN_DECEASED: str = "051422558"
 
+    # Δ210 submission tracking
+    D210_PROTOCOL_ID: str = os.getenv("D210_PROTOCOL_ID", "")
+    D210_DB_PATH: Path = Path(os.getenv("D210_DB_PATH", "/app/data/d210_tracker.db"))
+
     # MyAADE URLs -- GSIS OAuth login portal
     MYAADE_BASE: str = "https://www1.aade.gr/taxisnet"
     MYAADE_LOGIN_ENTRY: str = "https://www1.aade.gr/taxisnet/mytaxisnet"
@@ -165,6 +170,20 @@ DEFLECTION_PATTERNS = {
         "keywords_en": ["archived", "filed away"],
         "severity": "CRITICAL",
         "description": "Protocol archived without resolution",
+    },
+    "doy_peiraia_redirect": {
+        "keywords_el": [
+            "δου κατοίκων εξωτερικού",
+            "αρμόδια δου εξωτερικού",
+            "κατοίκων εξωτερικού",
+        ],
+        "keywords_en": [
+            "doy foreign residents",
+            "residents abroad tax office",
+            "not our doy",
+        ],
+        "severity": "CRITICAL",
+        "description": "ΔΟΥ A' Peiraia deflection to ΔΟΥ Κατοίκων Εξωτερικού",
     },
 }
 
@@ -239,6 +258,26 @@ CREATE INDEX IF NOT EXISTS idx_checks_time
     ON protocol_checks(checked_at);
 CREATE INDEX IF NOT EXISTS idx_alerts_protocol
     ON alerts(protocol_number);
+
+CREATE TABLE IF NOT EXISTS d210_submissions (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    submission_id       TEXT UNIQUE,
+    protocol_number     TEXT NOT NULL,
+    submission_date     TEXT NOT NULL,
+    submitting_doy      TEXT DEFAULT 'DOU A Peiraia',
+    status              TEXT DEFAULT 'pending',
+    doy_response        TEXT,
+    deflection_type     TEXT,
+    cover_letter_excerpt TEXT,
+    slack_alerted       INTEGER DEFAULT 0,
+    created_at          TEXT NOT NULL,
+    updated_at          TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_d210_protocol
+    ON d210_submissions(protocol_number);
+CREATE INDEX IF NOT EXISTS idx_d210_status
+    ON d210_submissions(status);
 """
 
 def init_database(db_path: Path) -> sqlite3.Connection:
@@ -313,10 +352,20 @@ def capture_html_error(driver, error_type: str, screenshot_dir: Path) -> str:
 # ---------------------------------------------------------------------------
 def analyze_deflection(text: str) -> tuple[Optional[str], Optional[str], Optional[str]]:
     """Analyze text for deflection patterns. Returns (type, severity, description)."""
-    text_lower = text.lower()
+    def _norm(s: str) -> str:
+        """Remove combining diacritics (Unicode category Mn = Mark, Nonspacing) and
+        casefold for accent- and case-insensitive Greek/Latin matching."""
+        return "".join(
+            c for c in unicodedata.normalize("NFD", s.casefold())
+            if unicodedata.category(c) != "Mn"  # Mn = Mark, Nonspacing (e.g. accent ά→α)
+        )
+
+    text_norm = _norm(text)
     for pattern_name, pattern in DEFLECTION_PATTERNS.items():
         for keyword in pattern["keywords_el"] + pattern["keywords_en"]:
-            if keyword.lower() in text_lower:
+            norm_kw = _norm(keyword)
+            # Guard: skip if keyword normalizes to empty (avoids "" in text → always True)
+            if norm_kw and norm_kw in text_norm:
                 return pattern_name, pattern["severity"], pattern["description"]
     return None, None, None
 
@@ -380,6 +429,61 @@ def send_alerts(message: str, severity: str = "INFO") -> None:
             }, timeout=10)
         except Exception as e:
             logger.error("Generic webhook failed: %s", e)
+
+
+# Δ210 cover letter excerpt displayed in Slack alerts
+_D210_COVER_LETTER_EXCERPT = (
+    "Υποβολή Δ210 — Αίτηση πλήρους ιστορικού ΕΝΦΙΑ για ΑΦΜ 051422558 (2020-2026). "
+    "Αρμόδια ΔΟΥ: ΔΟΥ Α' Πειραιά. "
+    "Τυχόν ανακατεύθυνση σε ΔΟΥ Κατοίκων Εξωτερικού αποτελεί παράνομη αποφυγή αρμοδιότητας "
+    "και θα αναφερθεί στην EPPO, ΣΔΟΕ και FBI IC3."
+)
+
+
+def send_d210_slack_alert(
+    webhook_url: str,
+    protocol_number: str,
+    status: str,
+    doy_response: str = "",
+    deflection_type: str = "",
+    cover_letter_excerpt: str = _D210_COVER_LETTER_EXCERPT,
+) -> bool:
+    """Send a Δ210-specific Slack alert with embedded cover letter excerpt."""
+    if not webhook_url or not requests:
+        return False
+
+    severity = "CRITICAL" if deflection_type == "doy_peiraia_redirect" else "HIGH"
+    color_map = {"CRITICAL": "#FF0000", "HIGH": "#FF6600", "WATCH": "#FFCC00", "INFO": "#0066FF"}
+
+    fields = [
+        {"title": "Protocol", "value": protocol_number, "short": True},
+        {"title": "Status", "value": status, "short": True},
+    ]
+    if deflection_type:
+        fields.append({"title": "Deflection", "value": deflection_type, "short": True})
+    if doy_response:
+        fields.append({"title": "ΔΟΥ Response", "value": doy_response[:200], "short": False})
+
+    payload = {
+        "attachments": [{
+            "color": color_map.get(severity, "#808080"),
+            "title": f"Δ210 Status Change [{severity}] — Protocol {protocol_number}",
+            "text": cover_letter_excerpt,
+            "fields": fields,
+            "footer": "Zeus MyAADE Monitor | Δ210 Tracker | Justice for John",
+            "ts": int(time.time()),
+        }]
+    }
+    try:
+        resp = requests.post(webhook_url, json=payload, timeout=10)
+        success = resp.status_code == 200
+        if success:
+            logger.info("Δ210 Slack alert sent for protocol %s [%s]", protocol_number, severity)
+        return success
+    except Exception as e:
+        logger.error("Δ210 Slack notification failed: %s", e)
+        return False
+
 
 # ---------------------------------------------------------------------------
 # Zeus Monitor -- Core Engine
