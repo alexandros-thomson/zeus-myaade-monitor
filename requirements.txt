@@ -5,6 +5,7 @@
 # Core dependencies
 selenium==4.16.0
 requests==2.32.4
+webdriver-manager==4.0.2
 
 # Optional: Enhanced logging and monitoring
 python-dotenv==1.0.0
