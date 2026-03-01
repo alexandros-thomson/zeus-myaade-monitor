@@ -2,8 +2,6 @@
 # ZEUS MYAADE MONITOR - DOCKER COMPOSE STACK
 # ═══════════════════════════════════════════════════════════════════════════
 
-version: '3.8'
-
 services:
   myaade-monitor:
     build: .
